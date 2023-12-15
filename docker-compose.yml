@@ -1,0 +1,23 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:13.3
+    environment:
+      POSTGRES_DB: "newsdb"
+      POSTGRES_USER: "test"
+      POSTGRES_PASSWORD: "test123"
+    volumes:
+      - "./db/database:/var/lib/postgresql/database"
+      - "./db/migrate.sql:/docker-entrypoint-initdb.d/init.sql"
+    ports:
+      - "5433:5432"
+  server:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    ports:
+      - "5000:5000"
+    environment:
+      DB_URL: "host=db user=test password=test123 dbname=newsdb sslmode=disable"
+
+

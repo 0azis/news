@@ -13,7 +13,7 @@ type NewsCredentials struct {
 }
 
 // Validate валидация полей
-func (n *NewsCredentials) Validate() bool {
+func (n *News) Validate() bool {
 	if n.Title == "" || n.Content == "" {
 		return false
 	}

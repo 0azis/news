@@ -30,8 +30,8 @@ func (s *store) Open() {
 
 	s.sql = sql
 
-	sql.SetMaxOpenConns(5)
-	sql.SetMaxIdleConns(5)
+	sql.SetMaxOpenConns(1)
+	sql.SetMaxIdleConns(1)
 
 	// ORM instance
 	db := reform.NewDB(sql, postgresql.Dialect, reform.NewPrintfLogger(logrus.Printf))

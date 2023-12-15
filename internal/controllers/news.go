@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"net/http"
 	"news/internal/models"
@@ -18,6 +19,7 @@ func (nc *newsControllers) GetAllNews(c *fiber.Ctx) error {
 
 	allNews, err := nc.Store.News().GetNews(limit, page)
 	if err != nil {
+		fmt.Println(err)
 		return c.Status(http.StatusInternalServerError).JSON(&models.HttpResponse{
 			Success: false,
 		})
@@ -30,7 +32,7 @@ func (nc *newsControllers) GetAllNews(c *fiber.Ctx) error {
 }
 
 func (nc *newsControllers) UpdateNews(c *fiber.Ctx) error {
-	var newsCredentials models.NewsCredentials
+	var newsCredentials models.News
 
 	newsID, _ := strconv.Atoi(c.Params("Id"))
 
@@ -40,7 +42,7 @@ func (nc *newsControllers) UpdateNews(c *fiber.Ctx) error {
 			Success: false,
 		})
 	}
-
+	
 	updatedNews, err := nc.Store.News().UpdateNews(newsID, newsCredentials)
 
 	if updatedNews.ID == 0 {

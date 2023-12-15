@@ -1,14 +1,16 @@
 package store
 
 import (
+	"github.com/lib/pq"
 	"gopkg.in/reform.v1"
 	"news/internal/models"
+	"news/internal/pkg"
 )
 
 // Репозиторий новостей
 type newsRepository interface {
-	GetNews(limit, page int) ([]models.News, error)                          // получить все новости (поддержка пагинации)
-	UpdateNews(newsID int, news models.NewsCredentials) (models.News, error) // поменять поля новости
+	GetNews(limit, page int) ([]models.News, error)               // получить все новости (поддержка пагинации)
+	UpdateNews(newsID int, news models.News) (models.News, error) // поменять поля новости
 }
 
 type news struct {
@@ -22,48 +24,35 @@ func (n *news) GetNews(limit, page int) ([]models.News, error) {
 
 	// можно было бы и var allNews []models.News, но хотел чтобы было не nil значение, чтобы возвращался массив, а не null значение после сериализации
 	allNews := []models.News{}
-	rows, err := n.db.Query("select * from news limit $1 offset $2", limit, page*limit)
+
+	rows, err := n.db.Query("select id, title, content, array_agg(category_id) news_categories from news join news_categories on news.id = news_categories.news_id group by id order by id limit $1 offset $2", limit, page*limit)
 
 	if err != nil {
 		return allNews, err
 	}
 
 	for rows.Next() {
-		var categories []int
+		var categories pq.Int64Array
 		var news models.News
-		err = rows.Scan(&news.Title, &news.Content, &news.ID)
+
+		err = rows.Scan(&news.ID, &news.Title, &news.Content, &categories)
 		if err != nil {
 			return allNews, err
 		}
-
-		// не смог придумать лучшего решения как послать второй запрос на получение всех категорий новости и потом собрать их в массив вручную
-		// рассматривал варианты с JOIN оператором, но никак не понимал, как в SQL перевести полученные значения в массив
-		// знаю что это далеко не лучшее решение, но по другому сделать не могу
-
-		rows2, _ := n.db.Query("select category_id from news_categories where news_id = $1", news.ID)
-		for rows2.Next() {
-			var category int
-			err = rows2.Scan(&category)
-			if err != nil {
-				return allNews, err
-			}
-			categories = append(categories, category)
-		}
-
-		news.Categories = categories
+		news.Categories = pkg.ConvertToArray(categories)
 		allNews = append(allNews, news)
 	}
 
 	return allNews, nil
 }
 
-func (n *news) UpdateNews(newsID int, news models.NewsCredentials) (models.News, error) {
+func (n *news) UpdateNews(newsID int, news models.News) (models.News, error) {
 	var updatedNews models.News
 
 	rows, err := n.db.Query(`update news set title = $1, content = $2 where id = $3 returning *`, news.Title, news.Content, newsID)
 
 	for rows.Next() {
-		err = rows.Scan(&updatedNews.Title, &updatedNews.Content, &updatedNews.ID)
+		err = rows.Scan(&updatedNews.ID, &updatedNews.Title, &updatedNews.Content)
 		if err != nil {
 			return updatedNews, err
 		}
