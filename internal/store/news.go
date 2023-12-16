@@ -1,7 +1,6 @@
 package store
 
 import (
-	"database/sql"
 	"github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/reform.v1"
@@ -16,8 +15,7 @@ type newsRepository interface {
 }
 
 type news struct {
-	sql *sql.DB
-	db  *reform.DB
+	db *reform.DB
 }
 
 func (n *news) GetNews(limit, page int) ([]models.News, error) {

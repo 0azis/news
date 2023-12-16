@@ -20,7 +20,7 @@ CREATE TABLE users (
     primary key (id)
 );
 
--- Full database with example data
+-- Fill database with example data
 
 INSERT INTO news (title, content) values ('Test', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.');
 INSERT INTO news (title, content) values ('Test2', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.');
