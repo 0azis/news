@@ -23,15 +23,15 @@ type store struct {
 
 func (s *store) Open() {
 	// *sql.DB instance вместе с connection pool
-	sql, err := sql.Open("pgx", os.Getenv("DB_URL"))
-	if err != nil {
-		logrus.Panicln("Database connection failed")
+	sql, _ := sql.Open("pgx", os.Getenv("DB_URL"))
+	if err := sql.Ping(); err != nil {
+		logrus.Error("Database connection failed")
 	}
 
 	s.sql = sql
 
-	sql.SetMaxOpenConns(1)
-	sql.SetMaxIdleConns(1)
+	sql.SetMaxOpenConns(100)
+	sql.SetMaxIdleConns(100)
 
 	// ORM instance
 	db := reform.NewDB(sql, postgresql.Dialect, reform.NewPrintfLogger(logrus.Printf))

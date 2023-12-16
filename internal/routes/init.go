@@ -6,6 +6,6 @@ import (
 )
 
 func InitRoutes(store store.InterfaceStore, app *fiber.App) {
-	newsRoutes(store, app)
 	authRoutes(store, app)
+	newsRoutes(store, app)
 }

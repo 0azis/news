@@ -22,6 +22,20 @@ func (ac *authControllers) SignUp(c *fiber.Ctx) error {
 		})
 	}
 
+	dbUser, err := ac.Store.Users().GetByLogin(credentials.Login)
+
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(&models.HttpResponse{
+			Success: false,
+		})
+	}
+
+	if dbUser.Login == credentials.Login {
+		return c.Status(http.StatusConflict).JSON(&models.HttpResponse{
+			Success: false,
+		})
+	}
+
 	hashedPassword, err := pkg.Encode([]byte(credentials.Password))
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(&models.HttpResponse{

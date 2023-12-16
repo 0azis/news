@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"net/http"
 	"news/internal/models"
@@ -19,7 +18,6 @@ func (nc *newsControllers) GetAllNews(c *fiber.Ctx) error {
 
 	allNews, err := nc.Store.News().GetNews(limit, page)
 	if err != nil {
-		fmt.Println(err)
 		return c.Status(http.StatusInternalServerError).JSON(&models.HttpResponse{
 			Success: false,
 		})
@@ -42,10 +40,10 @@ func (nc *newsControllers) UpdateNews(c *fiber.Ctx) error {
 			Success: false,
 		})
 	}
-	
-	updatedNews, err := nc.Store.News().UpdateNews(newsID, newsCredentials)
 
-	if updatedNews.ID == 0 {
+	updatedID, err := nc.Store.News().UpdateNews(newsID, newsCredentials)
+
+	if updatedID == 0 {
 		return c.Status(http.StatusNotFound).JSON(&models.HttpResponse{
 			Success: false,
 		})
@@ -57,7 +55,9 @@ func (nc *newsControllers) UpdateNews(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(updatedNews)
+	return c.JSON(&models.HttpResponse{
+		Success: true,
+	})
 }
 
 // Геттер для получения контроллера новостей

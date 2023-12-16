@@ -1,7 +1,9 @@
 package store
 
 import (
+	"database/sql"
 	"github.com/lib/pq"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/reform.v1"
 	"news/internal/models"
 	"news/internal/pkg"
@@ -9,12 +11,13 @@ import (
 
 // Репозиторий новостей
 type newsRepository interface {
-	GetNews(limit, page int) ([]models.News, error)               // получить все новости (поддержка пагинации)
-	UpdateNews(newsID int, news models.News) (models.News, error) // поменять поля новости
+	GetNews(limit, page int) ([]models.News, error)       // получить все новости (поддержка пагинации)
+	UpdateNews(newsID int, news models.News) (int, error) // поменять поля новости
 }
 
 type news struct {
-	db *reform.DB
+	sql *sql.DB
+	db  *reform.DB
 }
 
 func (n *news) GetNews(limit, page int) ([]models.News, error) {
@@ -26,10 +29,11 @@ func (n *news) GetNews(limit, page int) ([]models.News, error) {
 	allNews := []models.News{}
 
 	rows, err := n.db.Query("select id, title, content, array_agg(category_id) news_categories from news join news_categories on news.id = news_categories.news_id group by id order by id limit $1 offset $2", limit, page*limit)
-
 	if err != nil {
+		logrus.Error("Query error getting news")
 		return allNews, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var categories pq.Int64Array
@@ -37,8 +41,10 @@ func (n *news) GetNews(limit, page int) ([]models.News, error) {
 
 		err = rows.Scan(&news.ID, &news.Title, &news.Content, &categories)
 		if err != nil {
+			logrus.Error("Error while collecting news data")
 			return allNews, err
 		}
+
 		news.Categories = pkg.ConvertToArray(categories)
 		allNews = append(allNews, news)
 	}
@@ -46,17 +52,26 @@ func (n *news) GetNews(limit, page int) ([]models.News, error) {
 	return allNews, nil
 }
 
-func (n *news) UpdateNews(newsID int, news models.News) (models.News, error) {
-	var updatedNews models.News
+func (n *news) UpdateNews(newsID int, news models.News) (int, error) {
+	var updatedID int
+	rows, err := n.db.Query("delete from news_categories where news_id = $1", newsID)
+	defer rows.Close()
 
-	rows, err := n.db.Query(`update news set title = $1, content = $2 where id = $3 returning *`, news.Title, news.Content, newsID)
-
-	for rows.Next() {
-		err = rows.Scan(&updatedNews.ID, &updatedNews.Title, &updatedNews.Content)
+	for categoryID := range news.Categories {
+		rows, err = n.db.Query("insert into news_categories (news_id, category_id) values ($1, $2)", newsID, news.Categories[categoryID])
 		if err != nil {
-			return updatedNews, err
+			logrus.Error("Query error updating news categories")
+			return updatedID, err
 		}
 	}
 
-	return updatedNews, err
+	row := n.db.QueryRow(`update news set id = $1, title = $2, content = $3 where id = $4 returning id`, news.ID, news.Title, news.Content, newsID)
+	row.Scan(&updatedID)
+
+	if err != nil {
+		logrus.Error("Query error updating news")
+		return updatedID, err
+	}
+
+	return updatedID, nil
 }

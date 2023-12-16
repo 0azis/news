@@ -7,11 +7,6 @@ type News struct {
 	Categories []int  `json:"Categories"`
 }
 
-type NewsCredentials struct {
-	Title   string `json:"title"`
-	Content string `json:"content"`
-}
-
 // Validate валидация полей
 func (n *News) Validate() bool {
 	if n.Title == "" || n.Content == "" {

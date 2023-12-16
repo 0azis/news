@@ -10,7 +10,10 @@ import (
 
 func InitServer() {
 	// Загрузка виртуального окружения
-	godotenv.Load()
+	err := godotenv.Load()
+	if err != nil {
+		logrus.Error("Error while loading environment variables")
+	}
 
 	// Fiber Instance Application
 	app := fiber.New()
@@ -24,6 +27,9 @@ func InitServer() {
 	routes.InitRoutes(storeInstance, app)
 
 	// открываем порт и слушаем
-	logrus.Printf("Server is running!")
-	app.Listen(":5000")
+	logrus.Traceln("Server is running!")
+	err = app.Listen(":5000")
+	if err != nil {
+		logrus.Panic("Error while starting the server")
+	}
 }
