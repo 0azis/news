@@ -7,6 +7,13 @@ cd news/
 docker-compose build
 docker-compose up
 ```
+Или если были внесены какие то изменения
+```
+docker-compose down --volumes // удалить старые volumes
+docker-compose build
+docker-compose up
+```
+
 При запуске докер автоматически выполнит все миграции (создаст таблицы и заполнит их тестовыми данными).
 
 ## Документация API
